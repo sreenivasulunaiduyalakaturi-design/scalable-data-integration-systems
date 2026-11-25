@@ -1,0 +1,53 @@
+{
+  "target": { "database": "output/warehouse.db" },
+  "batch_size": 1000,
+  "workers": 4,
+  "executor": "thread",
+  "datasets": [
+    {
+      "name": "customers",
+      "table": "customers",
+      "key": ["email"],
+      "columns": { "email": "TEXT", "full_name": "TEXT", "country": "TEXT", "signup_date": "TEXT" },
+      "sources": [
+        {
+          "type": "csv", "system": "crm", "path": "data/sample/crm_customers.csv",
+          "mapping": {
+            "email":       { "from": "Email",  "type": "email", "required": true },
+            "full_name":   { "from": "Name",   "type": "str", "case": "title" },
+            "country":     { "from": "Country","type": "str", "case": "upper", "default": "UNKNOWN" },
+            "signup_date": { "from": "Signup", "type": "date" }
+          }
+        },
+        {
+          "type": "sqlite", "system": "legacy_billing", "path": "data/sample/legacy.db",
+          "query": "SELECT client_email, client_name, nation, created FROM clients",
+          "mapping": {
+            "email":       { "from": "client_email", "type": "email", "required": true },
+            "full_name":   { "from": "client_name",  "type": "str", "case": "title" },
+            "country":     { "from": "nation",       "type": "str", "case": "upper" },
+            "signup_date": { "from": "created",      "type": "date" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "orders",
+      "table": "orders",
+      "key": ["order_id"],
+      "columns": { "order_id": "TEXT", "customer_email": "TEXT", "amount": "REAL", "quantity": "INTEGER", "order_date": "TEXT" },
+      "sources": [
+        {
+          "type": "json", "system": "webshop", "path": "data/sample/orders.jsonl",
+          "mapping": {
+            "order_id":       { "from": "id",       "type": "str", "required": true },
+            "customer_email": { "from": "customer", "type": "email", "required": true },
+            "amount":         { "from": "total",    "type": "float", "required": true, "min": 0 },
+            "quantity":       { "from": "qty",      "type": "int", "default": 1 },
+            "order_date":     { "from": "date",     "type": "date" }
+          }
+        }
+      ]
+    }
+  ]
+}
